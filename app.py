@@ -10,29 +10,6 @@ db = get_db()
 def format_object_id(id):
     return str(id)
 
-# Ruta para iniciar sesión
-@app.route('/login', methods=['POST'])
-def login():
-    data = request.json
-    username = data.get('username')
-    password = data.get('password')
-
-    if not username or not password:
-        return jsonify({"error": "Falta nombre de usuario o contraseña"}), 400
-
-    # Buscar al usuario en la base de datos
-    user = db.users.find_one({"username": username})
-
-    if not user:
-        return jsonify({"error": "Usuario no encontrado"}), 404
-
-    if user['password'] != password:
-        return jsonify({"error": "Contraseña incorrecta"}), 401
-
-    # Si el usuario y la contraseña son correctos, devolver el user_id
-    return jsonify({"message": "Inicio de sesión exitoso", "user_id": str(user['_id'])}), 200
-
-
 # Ruta para registrar un nuevo usuario
 @app.route('/register', methods=['POST'])
 def register():
@@ -47,7 +24,25 @@ def register():
     db.users.insert_one(user)
     return jsonify({"message": "Usuario registrado con éxito"}), 201
 
+# Ruta para agregar una tarea
+@app.route('/task', methods=['POST'])
+def create_task():
+    data = request.json
+    user_id = data.get('user_id')
+    title = data.get('title')
 
+    if not user_id or not title:
+        return jsonify({"error": "Falta ID de usuario o título de la tarea"}), 400
+
+    task = {
+        "user_id": user_id,
+        "title": title,
+        "status": "To-Do",
+        "start_time": datetime.utcnow(),
+        "end_time": None
+    }
+    result = db.tasks.insert_one(task)
+    return jsonify({"message": "Tarea creada", "task_id": format_object_id(result.inserted_id)}), 201
 
 # Ruta para cambiar el estado de una tarea
 @app.route('/task/<task_id>', methods=['PATCH'])
@@ -72,14 +67,15 @@ def update_task_status(task_id):
     db.tasks.update_one({"_id": ObjectId(task_id)}, {"$set": update_data})
     return jsonify({"message": "Estado de tarea actualizado"}), 200
 
+# Ruta para obtener las tareas de un usuario
 @app.route('/tasks/<user_id>', methods=['GET'])
 def get_tasks(user_id):
     tasks = db.tasks.find({"user_id": user_id})
     task_list = []
     for task in tasks:
-        task['_id'] = str(task['_id'])
+        task['_id'] = format_object_id(task['_id'])
         task_list.append(task)
-    return jsonify(task_list), 200  # Devuelve una lista directamente
+    return jsonify(task_list), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
