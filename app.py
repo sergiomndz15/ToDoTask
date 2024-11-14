@@ -47,25 +47,14 @@ def register():
     db.users.insert_one(user)
     return jsonify({"message": "Usuario registrado con éxito"}), 201
 
-# Ruta para agregar una tarea
-@app.route('/task', methods=['POST'])
-def create_task():
-    data = request.json
-    user_id = data.get('user_id')
-    title = data.get('title')
-
-    if not user_id or not title:
-        return jsonify({"error": "Falta ID de usuario o título de la tarea"}), 400
-
-    task = {
-        "user_id": user_id,
-        "title": title,
-        "status": "To-Do",
-        "start_time": datetime.utcnow(),
-        "end_time": None
-    }
-    result = db.tasks.insert_one(task)
-    return jsonify({"message": "Tarea creada", "task_id": format_object_id(result.inserted_id)}), 201
+@app.route('/tasks/<user_id>', methods=['GET'])
+def get_tasks(user_id):
+    tasks = db.tasks.find({"user_id": user_id})
+    task_list = []
+    for task in tasks:
+        task['_id'] = str(task['_id'])
+        task_list.append(task)
+    return jsonify(task_list), 200  # Devuelve una lista directamente
 
 # Ruta para cambiar el estado de una tarea
 @app.route('/task/<task_id>', methods=['PATCH'])
