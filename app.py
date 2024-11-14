@@ -10,6 +10,28 @@ db = get_db()
 def format_object_id(id):
     return str(id)
 
+# Ruta para iniciar sesión
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
+        return jsonify({"error": "Falta nombre de usuario o contraseña"}), 400
+
+    # Buscar al usuario en la base de datos
+    user = db.users.find_one({"username": username})
+
+    if not user:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+
+    if user['password'] != password:
+        return jsonify({"error": "Contraseña incorrecta"}), 401
+
+    # Si el usuario y la contraseña son correctos
+    return jsonify({"message": "Inicio de sesión exitoso"}), 200
+
 # Ruta para registrar un nuevo usuario
 @app.route('/register', methods=['POST'])
 def register():
