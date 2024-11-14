@@ -29,8 +29,9 @@ def login():
     if user['password'] != password:
         return jsonify({"error": "Contraseña incorrecta"}), 401
 
-    # Si el usuario y la contraseña son correctos
-    return jsonify({"message": "Inicio de sesión exitoso"}), 200
+    # Si el usuario y la contraseña son correctos, devolver el user_id
+    return jsonify({"message": "Inicio de sesión exitoso", "user_id": str(user['_id'])}), 200
+
 
 # Ruta para registrar un nuevo usuario
 @app.route('/register', methods=['POST'])
