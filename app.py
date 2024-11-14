@@ -47,14 +47,7 @@ def register():
     db.users.insert_one(user)
     return jsonify({"message": "Usuario registrado con éxito"}), 201
 
-@app.route('/tasks/<user_id>', methods=['GET'])
-def get_tasks(user_id):
-    tasks = db.tasks.find({"user_id": user_id})
-    task_list = []
-    for task in tasks:
-        task['_id'] = str(task['_id'])
-        task_list.append(task)
-    return jsonify(task_list), 200  # Devuelve una lista directamente
+
 
 # Ruta para cambiar el estado de una tarea
 @app.route('/task/<task_id>', methods=['PATCH'])
@@ -79,15 +72,14 @@ def update_task_status(task_id):
     db.tasks.update_one({"_id": ObjectId(task_id)}, {"$set": update_data})
     return jsonify({"message": "Estado de tarea actualizado"}), 200
 
-# Ruta para obtener las tareas de un usuario
 @app.route('/tasks/<user_id>', methods=['GET'])
 def get_tasks(user_id):
     tasks = db.tasks.find({"user_id": user_id})
     task_list = []
     for task in tasks:
-        task['_id'] = format_object_id(task['_id'])
+        task['_id'] = str(task['_id'])
         task_list.append(task)
-    return jsonify(task_list), 200
+    return jsonify(task_list), 200  # Devuelve una lista directamente
 
 if __name__ == '__main__':
     app.run(debug=True)
