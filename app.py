@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, session
 from datetime import datetime
 from bson import ObjectId
 from config import get_db
+import bcrypt
 
 app = Flask(__name__)
 app.secret_key = "tu_clave_secreta"  # Asegúrate de tener una clave secreta para sesiones
@@ -23,9 +24,10 @@ def register():
     if existing_user:
         return jsonify({"error": "El nombre de usuario ya está en uso"}), 400
 
+    enc_password = bcrypt.hashpw(data['password'].encode('utf-8'), bcrypt.gensalt())
     user = {
         "username": data['username'],
-        "password": data['password']
+        "password": enc_password
     }
     db.users.insert_one(user)
     return jsonify({"message": "Usuario registrado con éxito"}), 201
@@ -38,9 +40,10 @@ def login():
         return jsonify({"error": "Falta nombre de usuario o contraseña"}), 400
 
     user = db.users.find_one({"username": data['username']})
-    if user and user['password'] == data['password']:
-        session['user_id'] = data['username']  # Usamos el nombre de usuario como ID
-        return jsonify({"message": "Login exitoso", "user_id": data['username']}), 200
+    if user:
+        if bcrypt.checkpw(data['password'].encode('utf-8'),user['password']):
+            session['user_id'] = data['username']  # Usamos el nombre de usuario como ID
+            return jsonify({"message": "Login exitoso", "user_id": data['username']}), 200
     return jsonify({"error": "Usuario o contraseña incorrectos"}), 400
 
 # Ruta para agregar una tarea
